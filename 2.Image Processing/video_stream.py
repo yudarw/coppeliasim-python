@@ -1,9 +1,17 @@
-# Example of read image data from CoppeliaSim
+# =========================================
+# CoppeliaSim Pick and Place
+#
+# June 24, 2022
+# @yudarismawahyudi
+# =========================================
 
+
+from include.coppeliasim import CoppeliaSim, Robot
+import time
+import sim
 import cv2 as cv
 import numpy as np
-import sim
-import time
+
 
 # ============================================================= #
 #  Color Image Filtering :
@@ -36,7 +44,7 @@ def filter_image(img, filterColor):
     # add the foreground and the background
     added_img = cv.add(res, background)
 
-    return mask, mask_inv, res, added_img, hsv
+    return mask
 
 # ============================================================= #
 #  Orientation Detection :
@@ -46,7 +54,14 @@ def detect_orientation(img):
     gray = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
     # Convert image to binary:
     ret, bw = cv.threshold(gray, 50, 255, cv.THRESH_BINARY | cv.THRESH_OTSU)
-    contours, res = cv.findContours(bw, cv.RETR_LIST, cv.CHAIN_APPROX_NONE)
+
+    red = filter_image(img, 'red')
+    green = filter_image(img, 'green')
+    blue = filter_image(img, 'blue')
+
+    combine = cv.bitwise_and(red, red, mask=green)
+
+    contours, res = cv.findContours(green, cv.RETR_LIST, cv.CHAIN_APPROX_NONE)
 
     for i, c in enumerate(contours):
 
@@ -82,7 +97,7 @@ def detect_orientation(img):
         #                       (center[0] + 295, center[1] + 10), (255, 255, 255), -1)
 
         cv.putText(img, label, (center[0], center[1]),
-                   cv.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 0), 1, cv.LINE_AA)
+                   cv.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 1, cv.LINE_AA)
 
         cv.drawContours(img, [box], 0, (0, 0, 255), 2)
 
@@ -91,30 +106,44 @@ def detect_orientation(img):
     return img
 
 
-sim.simxFinish(-1)
-clientId = sim.simxStart('127.0.0.1',19997, True, True, 5000, 5)
-sim.simxStartSimulation(clientId, sim.simx_opmode_blocking)
 
-if clientId != -1:
-    # Get vision sensor handle
-    ret, visionHandle = sim.simxGetObjectHandle(clientId, '/Vision_sensor', sim.simx_opmode_oneshot_wait)
-    # Start streaming image data
-    ret, resolution, image = sim.simxGetVisionSensorImage(clientId, visionHandle, 0, sim.simx_opmode_streaming)
 
-    time.sleep(1)
-    ret, resolution, image = sim.simxGetVisionSensorImage(clientId, visionHandle, 0, sim.simx_opmode_buffer)
-    if ret == sim.simx_return_ok:
+
+# Initialize Coppelia Library
+mSim = CoppeliaSim()
+mSim.connect(19997)
+robot = Robot('UR5')
+
+# Retrieve object position
+pick_pos = robot.get_object_position('/pick_pos')
+
+# Command robot to move to picking position
+robot.gripper(1)
+robot.set_position(pick_pos)
+
+# Retrieve vision sensor
+ret, vHandle = sim.simxGetObjectHandle(mSim.clientId, '/Vision_sensor', sim.simx_opmode_oneshot_wait)
+
+# Get the image
+ret, resolution, image = sim.simxGetVisionSensorImage(mSim.clientId, vHandle, 0, sim.simx_opmode_streaming)
+
+time.sleep(1)
+
+
+while sim.simxGetConnectionId(mSim.clientId) != -1:
+    ret, resolution, image = sim.simxGetVisionSensorImage(mSim.clientId, vHandle, 0, sim.simx_opmode_buffer)
+    if ret == sim.simx_return_ok :
+        # print("Image OK!!!")
         img = np.array(image, dtype=np.uint8)
         img.resize([resolution[1], resolution[0], 3])
         img2 = cv.cvtColor(img, cv.COLOR_RGB2BGR)
         img2 = cv.flip(img2, 0)
-        #a,b,c,d,e= filter_image(img2, 'green')
-        a = detect_orientation(img2)
-
+        #cv.imshow('image', img2)
+        #imgFilter = filter_image(img2, 'red')
+        detect_orientation(img2)
 
     elif ret == sim.simx_return_novalue_flag:
         print('No image yet')
         pass
 
-    if cv.waitKey(0):
-        cv.destroyAllWindows()
+    cv.waitKey(30)

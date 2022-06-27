@@ -4,7 +4,7 @@
 # @yudarismawahyudi
 # =========================================
 
-from coppeliasim import CoppeliaSim, Robot
+from include.coppeliasim import CoppeliaSim, Robot
 import time
 import sim
 

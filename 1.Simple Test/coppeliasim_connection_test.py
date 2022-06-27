@@ -4,9 +4,7 @@
 # @yudarismawahyudi
 # =========================================
 
-from coppeliasim import CoppeliaSim, Robot
-import time
-import sim
+from include.coppeliasim import CoppeliaSim, Robot
 
 # Initialize Coppelia Lib
 mSim = CoppeliaSim()
