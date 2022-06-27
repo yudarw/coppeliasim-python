@@ -11,4 +11,4 @@ import sim
 # Initialize Coppelia Lib
 mSim = CoppeliaSim()
 clientId = mSim.connect(19997)
-robot = Robot('UR5')
+robot = Robot('UR10')
