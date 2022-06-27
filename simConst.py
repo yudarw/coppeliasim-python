@@ -1,5 +1,5 @@
 #constants
-#Scene object types. Values are serialized
+#scene object types. Values are serialized
 sim_object_shape_type           =0
 sim_object_joint_type           =1
 sim_object_graph_type           =2
@@ -48,7 +48,7 @@ sim_ikresult_not_performed  =0
 sim_ikresult_success        =1
 sim_ikresult_fail           =2
 
-# Scene object sub-types. Values are serialized 
+# scene object sub-types. Values are serialized
 # Light sub-types 
 sim_light_omnidirectional_subtype   =1
 sim_light_spot_subtype              =2
@@ -75,7 +75,7 @@ sim_mill_cone_subtype               =42
 sim_object_no_subtype               =200
 
 
-#Scene object main properties (serialized)
+#scene object main properties (serialized)
 sim_objectspecialproperty_collidable                    =0x0001
 sim_objectspecialproperty_measurable                    =0x0002
 #reserved                        =0x0004 
@@ -165,7 +165,7 @@ sim_message_simulation_start_resume_request          =0x1000
 sim_message_simulation_pause_request                 =0x1001
 sim_message_simulation_stop_request                  =0x1002
 
-# Scene object properties. Combine with the | operator 
+# scene object properties. Combine with the | operator
 sim_objectproperty_reserved1                =0x0000
 sim_objectproperty_reserved2                =0x0001
 sim_objectproperty_reserved3                =0x0002
