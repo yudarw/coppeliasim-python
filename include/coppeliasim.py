@@ -45,6 +45,9 @@ class CoppeliaSim:
     def startSimulation(self):
         sim.simxStartSimulation(self.clientID, sim.simx_opmode_blocking)
 
+    def stopSimulation(self):
+        sim.simxStopSimulation(self.clientID, sim.simx_opmode_blocking)
+
 
 # =======================================================================
 # Class Coppelia Arm Robot
@@ -154,7 +157,7 @@ class CoppeliaArmRobot(CoppeliaSim):
         self.setPosition(pos)
         if wait:
             while True:
-                #time.sleep(0.05)
+                time.sleep(0.05)
                 if self.isMoving() == 'NOT_MOVING':
                     break
     # ===================================================================
