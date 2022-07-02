@@ -27,7 +27,7 @@ if mSim.connect(19997) != -1:
         time.sleep(1)
         ur10_robot.setPosition2(pos2, True)
 
-        ur10_robot.setSpeed(300, 50)
+        ur10_robot.setSpeed(50, 50)
         ur10_robot.setPosition2(pos3, True)
         ur10_robot.setPosition2(pos4, True)
         time.sleep(1)
@@ -35,7 +35,8 @@ if mSim.connect(19997) != -1:
         time.sleep(1)
         ur10_robot.setPosition2(pos3, True)
 
-    print("Program Finished")
+    print('Program Finished')
+
 else:
     pass
 
