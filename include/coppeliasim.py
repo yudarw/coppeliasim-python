@@ -1,8 +1,24 @@
+# =============================================================== #
+# Coppeliasim Library
+# July 2, 2022
+# @yudarismawahyudi
+# =============================================================== #
+
+# Please add these following files in your project folder:
+# 1. sim.py
+# 2. simConst.py
+# 3. remoteApi.dll (Windows) or remoteApi.so (linux)
+import math
+
 import sim
 import time
 
+# ==========================================================================
+# CoppeliaSim Class
+# ==========================================================================
 class CoppeliaSim:
     clientId = 0
+    connected = False
 
     def __init__(self):
         self.clientID = 0
@@ -18,16 +34,21 @@ class CoppeliaSim:
             print('Failed connecting to remote API server')
         return self.clientID
 
-    def get_object_handle(self, obj_name):
-        res, handle = sim.simxGetObjectHandle(self.clientID, obj_name, sim.simx_opmode_blocking)
+    def getObjectHandle(self, objName):
+        res, handle = sim.simxGetObjectHandle(self.clientID, objName, sim.simx_opmode_blocking)
         return handle
 
     def disconnect(self):
         sim.simxStopSimulation(self.clientID, sim.simx_opmode_blocking)
 
+    def startSimulation(self):
+        sim.simxStartSimulation(self.clientID, sim.simx_opmode_blocking)
 
-class Robot(CoppeliaSim):
 
+# ======================================================================= #
+# Class Coppelia Arm Robot
+# =======================================================================
+class CoppeliaArmRobot(CoppeliaSim):
     def __init__(self, robot_name):
         self.clientID = CoppeliaSim.clientId
         self.robot_name = robot_name
@@ -42,21 +63,31 @@ class Robot(CoppeliaSim):
         # Start position data streaming
         self.script = '/' + robot_name
         sim.simxCallScriptFunction(self.clientID, self.script,
-                                   sim.sim_scripttype_childscript,
-                                   'remoteApi_getPosition',
-                                   [], [], [], '',
-                                   sim.simx_opmode_streaming)
+                                    sim.sim_scripttype_childscript,
+                                    'remoteApi_getPosition',
+                                    [], [], [], '',
+                                    sim.simx_opmode_streaming)
+
+        # Start joint position data streaming
+        sim.simxCallScriptFunction(self.clientID, self.script,
+                                    sim.sim_scripttype_childscript,
+                                    'remoteApi_getJointPosition',
+                                    [], [], [], '',
+                                    sim.simx_opmode_buffer)
         # Moving status data streaming
         sim.simxGetInt32Signal(self.clientID, 'moving_status', sim.simx_opmode_streaming)
-        sim.simxGetStringSignal(self.clientID, 'test_signal', sim.simx_opmode_streaming)
+        sim.simxGetStringSignal(self.clientID, 'moving_signal', sim.simx_opmode_streaming)
+        # Print robot handle data
+        print("\n>>> Arm robot initialization: ", robot_name)
+        print("Robot handle = ", self.robot_handle)
+        print("\n")
 
-        time.sleep(0.05)
 
-    def read_object_handle(self):
+    def readObjectHandle(self):
         print('Robot handle  = %d' % self.robot_handle)
         print('Target handle = %d' % self.target_handle)
 
-    def get_object_position(self, obj_name):
+    def getObjectPosition(self, obj_name):
         res, handle = sim.simxGetObjectHandle(self.clientID, obj_name, sim.simx_opmode_oneshot_wait)
         res, pos = sim.simxGetObjectPosition(self.clientID, handle, self.robot_handle, sim.simx_opmode_oneshot_wait)
         res, ori = sim.simxGetObjectOrientation(self.clientID, handle, self.robot_handle, sim.simx_opmode_oneshot_wait)
@@ -66,62 +97,80 @@ class Robot(CoppeliaSim):
             ret[i + 3] = ori[i] * 180 / 3.14
         return ret
 
-    def read_position(self):
+    # Get current robot position
+    def readPosition(self):
+        self.posData = [0,0,0,0,0,0]
         ret = sim.simxCallScriptFunction(self.clientID, self.script,
                                          sim.sim_scripttype_childscript,
                                          'remoteApi_getPosition',
                                          [], [], [], '',
                                          sim.simx_opmode_buffer)
-        posData = ret[2]
-        for i in range(3):
-            posData[i] = posData[i] * 1000
-            posData[i + 3] = posData[i + 3] * 180 / 3.14
-        return posData
+        if ret[0] == sim.simx_return_ok:
+            self.posData = ret[2]
+            for i in range(3):
+                self.posData[i] = self.posData[i] * 1000
+                self.posData[i + 3] = self.posData[i + 3] * 180 / 3.14
+        return self.posData
 
-    def set_position(self, pos):
+    # Get current joint position
+    def readJointPosition(self):
+        ret = sim.simxCallScriptFunction(self.clientID, self.script,
+                                         sim.sim_scripttype_childscript,
+                                         'remoteApi_getJointPosition',
+                                         [], [], [], '',
+                                         sim.simx_opmode_buffer)
+
+    # Standard set robot position
+    def setPosition(self, pos):
         cmdPos = [0, 0, 0, 0, 0, 0]
         for i in range(3):
             cmdPos[i] = pos[i] / 1000
             cmdPos[i + 3] = pos[i + 3] * 3.141592 / 180
-
         ret = sim.simxCallScriptFunction(self.clientID, self.script,
                                          sim.sim_scripttype_childscript,
                                          'remoteApi_movePosition',
                                          [], cmdPos, [], '',
                                          sim.simx_opmode_blocking)
 
-    def set_position2(self, pos, wait):
-        self.set_position(pos)
+    # Set robot positon with wait signal
+    def setPosition2(self, pos, wait):
+        self.setPosition(pos)
         if wait:
             while True:
-                time.sleep(0.05)
+                #time.sleep(0.05)
                 if self.isMoving() == 'NOT_MOVING':
                     break
 
     # Check whether the robot is moving
     def isMoving(self):
-        ret, s = sim.simxGetStringSignal(self.clientID, 'test_signal', sim.simx_opmode_buffer)
+        ret, s = sim.simxGetStringSignal(self.clientID, 'moving_signal', sim.simx_opmode_buffer)
         s = s.decode('ascii')
         return s
 
     # Set Robot Speed: 0 - 100
-    def set_speed(self, velocity):
-        command = [0]
-        command[0] = velocity
+    def setSpeed(self, lin_vel, ang_vel):
+        command = [0,0]
+        command[0] = lin_vel / 1000
+        command[1] = ang_vel * math.pi / 180
         ret = sim.simxCallScriptFunction(self.clientID, self.script,
                                          sim.sim_scripttype_childscript,
                                          'remoteApi_setSpeed',
-                                         command, [], [], '',
+                                         [], command, [], '',
                                          sim.simx_opmode_blocking)
 
-    # Set Robot Gripper ON-OFF
-    def gripper(self, state):
-        command = [0, 0]
-        if state:
-            command[0] = 1
-        else:
-            command[0] = 0
-
+    # Catch Gripper
+    def gripperCatch(self):
+        command = [0,0]
+        command[0] = 0
+        ret = sim.simxCallScriptFunction(self.clientID, self.script,
+                                         sim.sim_scripttype_childscript,
+                                         'remoteApi_setGripper',
+                                         command, [], [], '',
+                                         sim.simx_opmode_blocking)
+    # Release Gripper
+    def gripperRelease(self):
+        command = [0,0]
+        command[0] = 1
         ret = sim.simxCallScriptFunction(self.clientID, self.script,
                                          sim.sim_scripttype_childscript,
                                          'remoteApi_setGripper',

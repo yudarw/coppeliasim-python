@@ -10,3 +10,6 @@ from include.coppeliasim import CoppeliaSim, Robot
 mSim = CoppeliaSim()
 clientId = mSim.connect(19997)
 robot = Robot('UR10')
+
+
+print("Hello world")
