@@ -1,7 +1,6 @@
 import time
 from include.coppeliasim import CoppeliaSim, CoppeliaArmRobot
 
-
 # Initialize the CoppeliaSim connection
 mSim = CoppeliaSim()
 if mSim.connect(19997) != -1:
@@ -17,8 +16,6 @@ if mSim.connect(19997) != -1:
     pos2 = [400, -300, 200, 180, 0, 0]
     pos3 = [400, 300, 200, 180, 0, 0]
     pos4 = [400, 300, 100, 180, 0, 0]
-
-
 
     ur10_robot.gripperRelease()
     while True:
