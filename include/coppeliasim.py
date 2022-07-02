@@ -13,6 +13,7 @@ import math
 import sim
 import time
 
+
 # ==========================================================================
 # CoppeliaSim Class
 # ==========================================================================
@@ -45,7 +46,7 @@ class CoppeliaSim:
         sim.simxStartSimulation(self.clientID, sim.simx_opmode_blocking)
 
 
-# ======================================================================= #
+# =======================================================================
 # Class Coppelia Arm Robot
 # =======================================================================
 class CoppeliaArmRobot(CoppeliaSim):
@@ -73,7 +74,7 @@ class CoppeliaArmRobot(CoppeliaSim):
                                     sim.sim_scripttype_childscript,
                                     'remoteApi_getJointPosition',
                                     [], [], [], '',
-                                    sim.simx_opmode_buffer)
+                                    sim.simx_opmode_streaming)
         # Moving status data streaming
         sim.simxGetInt32Signal(self.clientID, 'moving_status', sim.simx_opmode_streaming)
         sim.simxGetStringSignal(self.clientID, 'moving_signal', sim.simx_opmode_streaming)
@@ -111,14 +112,28 @@ class CoppeliaArmRobot(CoppeliaSim):
                 self.posData[i] = self.posData[i] * 1000
                 self.posData[i + 3] = self.posData[i + 3] * 180 / 3.14
         return self.posData
+    # ===================================================================
+
 
     # Get current joint position
     def readJointPosition(self):
+        self.jointPos = [0,0,0,0,0,0]
         ret = sim.simxCallScriptFunction(self.clientID, self.script,
                                          sim.sim_scripttype_childscript,
                                          'remoteApi_getJointPosition',
                                          [], [], [], '',
                                          sim.simx_opmode_buffer)
+        if ret[0] == sim.simx_return_ok:
+            self.jointPos = ret[2]
+            for i in range(6):
+                self.jointPos[i] = self.jointPos[i] * 180 / math.pi
+
+        else:
+            print("ERROR: Read joint position failed!")
+
+        return self.jointPos
+    # ===================================================================
+
 
     # Standard set robot position
     def setPosition(self, pos):
@@ -131,6 +146,8 @@ class CoppeliaArmRobot(CoppeliaSim):
                                          'remoteApi_movePosition',
                                          [], cmdPos, [], '',
                                          sim.simx_opmode_blocking)
+    # ===================================================================
+
 
     # Set robot positon with wait signal
     def setPosition2(self, pos, wait):
@@ -140,6 +157,25 @@ class CoppeliaArmRobot(CoppeliaSim):
                 #time.sleep(0.05)
                 if self.isMoving() == 'NOT_MOVING':
                     break
+    # ===================================================================
+
+
+    # Set Joint Position
+    def setJointPosition(self, pos, wait):
+        cmdPos = [0, 0, 0, 0, 0, 0]
+        for i in range(6):
+            cmdPos[i] = pos[i] * math.pi / 180
+        ret = sim.simxCallScriptFunction(self.clientID, self.script,
+                                         sim.sim_scripttype_childscript,
+                                         'remoteApi_moveJointPosition',
+                                         [], cmdPos, [], '',
+                                         sim.simx_opmode_blocking)
+        if wait:
+            while True:
+                if self.isMoving() == 'NOT_MOVING':
+                    break
+    # ===================================================================
+
 
     # Check whether the robot is moving
     def isMoving(self):
@@ -157,6 +193,7 @@ class CoppeliaArmRobot(CoppeliaSim):
                                          'remoteApi_setSpeed',
                                          [], command, [], '',
                                          sim.simx_opmode_blocking)
+    # ===================================================================
 
     # Catch Gripper
     def gripperCatch(self):
@@ -176,3 +213,20 @@ class CoppeliaArmRobot(CoppeliaSim):
                                          'remoteApi_setGripper',
                                          command, [], [], '',
                                          sim.simx_opmode_blocking)
+
+# =======================================================================
+    # Class Coppelia Sensors
+    # =======================================================================
+class CoppeliaSensor(CoppeliaSim):
+    def __init__(self, sensorName, sensorType):
+        self.sensorHandle = 0
+        self.clientId = CoppeliaSim.clientId
+        res, self.sensorHandle = sim.simxGetObjectHandle(self.clientId, sensorName, sim.simx_opmode_oneshot_wait)
+        if self.sensorHandle != 0:
+            if sensorType == 0:
+                ret, resolution, image = sim.simxGetVisionSensorImage(self.clientId, self.sensorHandle, 0, sim.simx_opmode_streaming)
+    # ========================================================
+
+    def getImage(self):
+        ret, resolution, image = sim.simxGetVisionSensorImage(self.clientId, self.sensorHandle, 0, sim.simx_opmode_buffer)
+        return resolution, image
