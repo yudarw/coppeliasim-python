@@ -25,4 +25,4 @@ if mSim.connect(19997) != -1:
     cv.imshow("Vision Sensor", img2)
     cv.waitKey(0)
 else:
-    print("ERROR: CoppeliaSim failed!!!")
+    print("ERROR: CoppeliaSim connection failed!!!")

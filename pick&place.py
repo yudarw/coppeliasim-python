@@ -7,6 +7,8 @@ def pickObject(objName):
 
     # Get Object Handle
     objPos = ur10_robot.getObjectPosition(objName)
+    print(">>> Pick object ", objName)
+    print("Object Position = ", objPos)
 
     ur10_robot.setSpeed(100, 90)
     pickPos_step1 = [objPos[0] - 100, objPos[1], objPos[2] + 100, 0, 90, 90]
