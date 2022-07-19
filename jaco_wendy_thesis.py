@@ -27,6 +27,9 @@ def thread_robotMovement():
         jacoRobot.gripperRelease()
         time.sleep(1)
         jacoRobot.setPosition2(liftPos3, True)
+# ====================================================
+
+
 
 
 # INITIALIZATION:
@@ -44,9 +47,12 @@ time.sleep(1)
 t = threading.Thread(target=thread_robotMovement)
 t.start()
 
+
+
+
+
 # MAIN PRORGAM:
 # ======================================================
-
 # masukkan program utama disini (looping program)
 while True:
     pass
