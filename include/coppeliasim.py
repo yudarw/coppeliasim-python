@@ -157,7 +157,7 @@ class CoppeliaArmRobot(CoppeliaSim):
         self.setPosition(pos)
         if wait:
             while True:
-                time.sleep(0.05)
+                time.sleep(0.1)
                 if self.isMoving() == 'NOT_MOVING':
                     break
     # ===================================================================
