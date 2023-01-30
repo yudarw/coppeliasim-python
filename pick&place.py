@@ -54,29 +54,31 @@ def putObject(color, step):
     ur10_robot.setJointPosition(pos, True)
 
 
-# Initialize the CoppeliaSim connection
-mSim = CoppeliaSim()
-if mSim.connect(19997) != -1:
-    # If the connection is success, initialize the robot properties
-    ur10_robot = CoppeliaArmRobot("UR10")
-    time.sleep(1)
 
-    # Initial Position
-    pos = [0, -15, 105, 90, 90, 90]
-    #pos = [-80, -15, 105, 0, -90, 90]
-    ur10_robot.setJointPosition(pos, True)
+if __name__ == "__main__":
+    # Initialize the CoppeliaSim connection
+    mSim = CoppeliaSim()
+    if mSim.connect(19997) != -1:
+        # If the connection is success, initialize the robot properties
+        ur10_robot = CoppeliaArmRobot("UR10")
+        time.sleep(1)
 
-    pickObject("/Cuboid[0]")
-    putObject(1, 1)
+        # Initial Position
+        pos = [0, -15, 105, 90, 90, 90]
+        #pos = [-80, -15, 105, 0, -90, 90]
+        ur10_robot.setJointPosition(pos, True)
 
-    pickObject("/Cuboid[1]")
-    putObject(1, 2)
+        pickObject("/Cuboid[0]")
+        putObject(1, 1)
 
-    pickObject("/Cuboid[2]")
-    putObject(1, 3)
+        pickObject("/Cuboid[1]")
+        putObject(1, 2)
 
-    pickObject("/Cuboid[3]")
-    putObject(1, 4)
+        pickObject("/Cuboid[2]")
+        putObject(1, 3)
 
-    time.sleep(2)
-    mSim.stopSimulation()
+        pickObject("/Cuboid[3]")
+        putObject(1, 4)
+
+        time.sleep(2)
+        mSim.stopSimulation()
