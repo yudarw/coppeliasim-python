@@ -1,6 +1,7 @@
 from include.coppeliasim import CoppeliaSim, Robot
 import sim
 
+#Connect to coppeliasim
 coppelia = CoppeliaSim()
 coppelia.connect(19997)
 
