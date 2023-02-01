@@ -20,7 +20,7 @@ ret, handle = sim.simxGetObjectHandle(coppelia.clientId, 'Proximity_sensor', sim
 while True:
     state = sim.simxReadProximitySensor(clientId, handle, sim.simx_opmode_oneshot_wait)
     print('Proximity sensor: ', state)
-    sim.disconnect()
+    #sim.disconnect()
 
 
 ''''
